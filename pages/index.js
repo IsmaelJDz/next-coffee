@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
@@ -20,11 +22,28 @@ export async function getStaticProps(context) {
 }
 
 export default function Home({ coffeeStores }) {
-  const { handleTrackLocation, latLong, locationErrorMgs } = useTrackLocation();
+  const { handleTrackLocation, latLong, locationErrorMgs, isFindingLocation } =
+    useTrackLocation();
 
   const handleOnBannerBtnClick = () => {
     handleTrackLocation();
   };
+
+  console.log({ latLong, locationErrorMgs });
+
+  useEffect(() => {
+    async function handleFetching() {
+      if (latLong) {
+        try {
+          const fetchedCoffeeStores = await fetchCoffeeStore(latLong, 20);
+          console.log({ fetchedCoffeeStores });
+        } catch (error) {
+          console.log({ error });
+        }
+      }
+    }
+    handleFetching();
+  }, [latLong]);
 
   return (
     <div className={styles.container}>
@@ -36,9 +55,10 @@ export default function Home({ coffeeStores }) {
 
       <main className={styles.main}>
         <Banner
-          buttonText="View store nearby"
+          buttonText={isFindingLocation ? "Locating..." : "View store nearby"}
           handleOnClick={handleOnBannerBtnClick}
         />
+        {locationErrorMgs && <p>Something went wrong: {locationErrorMgs}</p>}
         <div className={styles.heroImage}>
           <Image
             src="/images/hero-image.png"
