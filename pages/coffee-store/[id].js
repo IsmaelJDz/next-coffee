@@ -1,24 +1,34 @@
-import { useRouter } from 'next/dist/client/router';
-import Head from 'next/head';
-import Image from 'next/image';
-import Link from 'next/link';
-import React from 'react';
+import { useContext, useState, useEffect } from "react";
+import { useRouter } from "next/dist/client/router";
+import Head from "next/head";
+import Image from "next/image";
+import Link from "next/link";
+import React from "react";
 
-import cn from 'classnames';
+import cn from "classnames";
 
-import { fetchCoffeeStore } from '../../lib/coffe-stores';
+import { fetchCoffeeStore } from "../../lib/coffee-stores";
 
-import styles from '../../styles/coffee-store.module.css';
+import { StoreContext } from "../../context/store-context";
+
+import { isEmpty } from "../../utils/";
+
+import styles from "../../styles/coffee-store.module.css";
 
 export async function getStaticProps(staticProps) {
-  const coffeeStore = await fetchCoffeeStore();
   const params = staticProps.params;
+  let coffeeStore;
+  try {
+    coffeeStore = await fetchCoffeeStore();
+  } catch (err) {}
+
+  const findCoffeeStoreById = coffeeStore.find((coffeeStore) => {
+    return coffeeStore.id.toString() === params.id;
+  });
 
   return {
     props: {
-      coffeeStore: coffeeStore.find(coffeeStore => {
-        return coffeeStore.id.toString() === params.id;
-      }),
+      coffeeStore: findCoffeeStoreById ? findCoffeeStoreById : {},
     },
   };
 }
@@ -27,7 +37,7 @@ export async function getStaticPaths() {
   const coffeeStore = await fetchCoffeeStore();
 
   return {
-    paths: coffeeStore.map(coffeeStore => {
+    paths: coffeeStore.map((coffeeStore) => {
       return {
         params: {
           id: coffeeStore.id.toString(),
@@ -38,18 +48,36 @@ export async function getStaticPaths() {
   };
 }
 
-const CoffeeStore = ({ coffeeStore }) => {
-  const { location, name, imgUrl } = coffeeStore;
-
+const CoffeeStore = (initialProps) => {
+  const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
   const router = useRouter();
+  const {
+    state: { coffeeStores },
+  } = useContext(StoreContext);
+
+  const id = router.query.id;
+
+  useEffect(() => {
+    if (isEmpty(initialProps.coffeeStore)) {
+      if (coffeeStores > 0) {
+        const findCoffeeStoreById = coffeeStores.find((coffeeStore) => {
+          return coffeeStore.id.toString() === id;
+        });
+
+        setCoffeeStore(findCoffeeStoreById);
+      }
+    }
+  }, [id]);
 
   if (router.isFallback) {
     // isFallback is true when the page is loading
     return <div>Loading...</div>;
   }
 
+  const { address, name, neighbourhood, imgUrl } = coffeeStore;
+
   const handleUpVoteButton = () => {
-    console.log('Upvoted');
+    console.log("Upvoted");
   };
 
   return (
@@ -60,7 +88,7 @@ const CoffeeStore = ({ coffeeStore }) => {
       <div className={styles.container}>
         <div className={styles.col1}>
           <div className={styles.backToHomeLink}>
-            <Link href='/' scroll={false}>
+            <Link href="/" scroll={false}>
               <a>Back Home</a>
             </Link>
           </div>
@@ -70,7 +98,7 @@ const CoffeeStore = ({ coffeeStore }) => {
           <Image
             src={
               imgUrl ||
-              'https://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80'
+              "https://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80"
             }
             alt={name}
             width={600}
@@ -78,43 +106,38 @@ const CoffeeStore = ({ coffeeStore }) => {
             className={styles.storeImg}
           />
         </div>
-        <div className={cn('glass', styles.col2)}>
+        <div className={cn("glass", styles.col2)}>
           <div className={styles.iconWrapper}>
             <Image
-              src='/static/icons/places.svg'
-              width='24'
-              height='24'
-              alt='icon'
+              src="/static/icons/places.svg"
+              width="24"
+              height="24"
+              alt="icon"
             />
-            <p className={styles.text}> {location.address} </p>
+            <p className={styles.text}> {address} </p>
           </div>
-          {location.neighbourhood && (
+          {neighbourhood && (
             <div className={styles.iconWrapper}>
               <Image
-                src='/static/icons/nearMe.svg'
-                width='24'
-                height='24'
-                alt='icon'
+                src="/static/icons/nearMe.svg"
+                width="24"
+                height="24"
+                alt="icon"
               />
-              <p className={styles.text}>
-                {' '}
-                {location.neighbourhood}{' '}
-              </p>
+              <p className={styles.text}> {neighbourhood} </p>
             </div>
           )}
           <div className={styles.iconWrapper}>
             <Image
-              src='/static/icons/star.svg'
-              width='24'
-              height='24'
-              alt='icon'
+              src="/static/icons/star.svg"
+              width="24"
+              height="24"
+              alt="icon"
             />
             <p className={styles.text}> 1 </p>
           </div>
 
-          <button
-            className={styles.upvoteButton}
-            onClick={handleUpVoteButton}>
+          <button className={styles.upvoteButton} onClick={handleUpVoteButton}>
             Up vote!
           </button>
         </div>

@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+
+import { ACTION_TYPES, StoreContext } from "../context/store-context";
 
 const useTrackLocation = () => {
   const [locationErrorMgs, setLocationErrorMgs] = useState("");
   const [isFindingLocation, setIsFindingLocation] = useState(false);
-  const [latLong, setLatLong] = useState("");
+  //const [latLong, setLatLong] = useState("");
+
+  const { dispatch } = useContext(StoreContext);
 
   const success = (position) => {
     const { latitude, longitude } = position.coords;
 
-    setLatLong(`${latitude},${longitude}`);
+    //setLatLong(`${latitude},${longitude}`);
+    dispatch({
+      type: ACTION_TYPES.SET_LAT_LONG,
+      payload: { latLong: `${latitude},${longitude}` },
+    });
     setLocationErrorMgs("");
     setIsFindingLocation(false);
   };
@@ -30,7 +38,7 @@ const useTrackLocation = () => {
   };
 
   return {
-    latLong,
+    //atLong,
     locationErrorMgs,
     isFindingLocation,
     handleTrackLocation,
